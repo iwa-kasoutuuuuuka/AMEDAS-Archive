@@ -1,0 +1,29 @@
+# Gradleのビルド成果物とキャッシュ
+.gradle/
+build/
+
+# Android Studioの設定ファイル
+*.iml
+.idea/
+.navigation/
+
+# ローカル設定（SDKパス、APIキーなど）
+local.properties
+.env
+.env.*
+
+# OSが自動生成する隠しファイル
+.DS_Store
+Thumbs.db
+
+# Roomデータベースのスキーマダンプ成果物（スキーマ検証用を除く場合）
+schemas/
+
+# テスト実行時のキャッシュやレポート
+captures/
+.externalNativeBuild/
+.cxx/
+
+# 一時的なスクリーンショットやUIダンプファイル（ルート直下のみ）
+/*.png
+/*.xml
