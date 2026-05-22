@@ -198,6 +198,13 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     TextField(
+                        value = yearText,
+                        onValueChange = { yearText = it },
+                        label = { Text("検証対象年") },
+                        modifier = Modifier.weight(1.2f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextField(
                         value = monthText,
                         onValueChange = { monthText = it },
                         label = { Text("月") },
@@ -209,13 +216,6 @@ fun HomeScreen(
                         onValueChange = { dayText = it },
                         label = { Text("日") },
                         modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TextField(
-                        value = yearText,
-                        onValueChange = { yearText = it },
-                        label = { Text("検証対象年") },
-                        modifier = Modifier.weight(1.2f)
                     )
                 }
 
@@ -329,7 +329,7 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
         
         // 法的遵守事項＆免責バナーを下部に常時表示
         ComplianceBanner(modifier = Modifier.padding(top = 16.dp))

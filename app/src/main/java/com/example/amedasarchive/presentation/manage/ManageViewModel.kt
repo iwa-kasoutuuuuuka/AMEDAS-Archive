@@ -103,9 +103,9 @@ class ManageViewModel(
                 syncWorkRequest
             )
 
-            // WorkInfoのライブ進捗監視
-            workManager.getWorkInfoByIdLiveData(syncWorkRequest.id)
-                .observeForever { workInfo ->
+            // WorkInfoのライブ進捗監視（Flowで購読してメモリリーク・メインスレッド例外を完全回避）
+            workManager.getWorkInfoByIdFlow(syncWorkRequest.id)
+                .collect { workInfo ->
                     if (workInfo != null) {
                         when (workInfo.state) {
                             WorkInfo.State.RUNNING -> {

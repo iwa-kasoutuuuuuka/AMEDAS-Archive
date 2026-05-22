@@ -27,3 +27,6 @@ captures/
 # 一時的なスクリーンショットやUIダンプファイル（ルート直下のみ）
 /*.png
 /*.xml
+
+# Keystore (署名鍵) の除外
+*.keystore
