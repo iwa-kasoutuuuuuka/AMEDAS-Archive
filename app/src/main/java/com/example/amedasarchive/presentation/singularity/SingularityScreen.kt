@@ -34,6 +34,10 @@ fun SingularityScreen(
     var expanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
+    LaunchedEffect(Unit) {
+        viewModel.loadInitialData()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()

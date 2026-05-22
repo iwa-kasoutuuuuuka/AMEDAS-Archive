@@ -35,6 +35,10 @@ fun CompareScreen(
 
     val scrollState = rememberScrollState()
 
+    LaunchedEffect(Unit) {
+        viewModel.loadStations()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()

@@ -38,12 +38,14 @@ class SingularityViewModel(
         loadInitialData()
     }
 
-    private fun loadInitialData() {
+    fun loadInitialData() {
         viewModelScope.launch {
             val list = repository.getAllStations()
             _stations.value = list
             if (list.isNotEmpty()) {
-                _selectedStation.value = list.first()
+                if (_selectedStation.value == null) {
+                    _selectedStation.value = list.first()
+                }
                 analyzeSingularities()
             }
         }
