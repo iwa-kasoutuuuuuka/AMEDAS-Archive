@@ -66,8 +66,8 @@ interface WeatherDao {
      */
     @Query("""
         SELECT s.prefecture, COUNT(d.date) as recordCount 
-        FROM daily_weather d
-        INNER JOIN stations s ON d.stationId = s.stationId
+        FROM stations s
+        LEFT JOIN daily_weather d ON s.stationId = d.stationId
         GROUP BY s.prefecture
     """)
     suspend fun getRecordCountByPrefecture(): List<PrefectureRecordCount>
