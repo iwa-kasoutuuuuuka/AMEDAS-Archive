@@ -26,8 +26,9 @@ interface WeatherRepository {
     /**
      * 該当観測所のデータを同期。ローカルDBの最新日付を自動確認し、
      * 未取得期間の差分データのみを気象庁から取得します。
+     * @param years 同期開始時の取得対象年数（例：10、20、30）
      */
-    suspend fun syncStationData(stationId: String): Boolean
+    suspend fun syncStationData(stationId: String, years: Int = 10): Boolean
 
     // --- 統計計算・検索関連 ---
     /**

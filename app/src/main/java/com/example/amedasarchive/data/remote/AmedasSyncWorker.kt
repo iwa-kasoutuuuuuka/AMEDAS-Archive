@@ -19,6 +19,7 @@ class AmedasSyncWorker(
 
     companion object {
         const val KEY_STATION_IDS = "station_ids"
+        const val KEY_YEARS = "sync_years"
         const val KEY_PROGRESS_CURRENT = "progress_current"
         const val KEY_PROGRESS_TOTAL = "progress_total"
         const val KEY_CURRENT_STATION_NAME = "current_station_name"
@@ -27,6 +28,7 @@ class AmedasSyncWorker(
     override suspend fun doWork(): Result {
         // 同期対象となる観測所IDのリストを取得
         val stationIds = inputData.getStringArray(KEY_STATION_IDS) ?: return Result.failure()
+        val years = inputData.getInt(KEY_YEARS, 10)
         val total = stationIds.size
         if (total == 0) return Result.success()
 
@@ -53,7 +55,7 @@ class AmedasSyncWorker(
                 )
 
                 // 2. 該当地点の同期処理（レポジトリ経由、内部で差分検知を実施）を実行
-                repository.syncStationData(stationId)
+                repository.syncStationData(stationId, years)
 
                 // 3. 【超重要】気象庁のサーバーに短時間で大量のリクエストを送信して
                 // 負荷をかけないよう、リクエスト間に必ず 2000ms のウェイトを設ける

@@ -8,7 +8,7 @@ import com.example.amedasarchive.domain.repository.WeatherRepository
 class SyncStationUseCase(
     private val repository: WeatherRepository
 ) {
-    suspend fun execute(stationId: String): Boolean {
-        return repository.syncStationData(stationId)
+    suspend fun execute(stationId: String, years: Int = 10): Boolean {
+        return repository.syncStationData(stationId, years)
     }
 }

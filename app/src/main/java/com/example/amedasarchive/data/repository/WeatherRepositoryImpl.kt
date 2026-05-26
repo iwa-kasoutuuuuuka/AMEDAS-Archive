@@ -64,13 +64,14 @@ class WeatherRepositoryImpl(
     /**
      * ローカルDBの最終同期日付を確認し、気象庁から不足している差分データのみを
      * ストリーム経由でダウンロードし、パースしてRoomに保存します。
+     * @param years 同期開始時の取得対象年数
      */
-    override suspend fun syncStationData(stationId: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun syncStationData(stationId: String, years: Int): Boolean = withContext(Dispatchers.IO) {
         val lastSync = syncLogDao.getSyncLog(stationId)
         val today = LocalDate.now()
         val todayStr = today.format(DateTimeFormatter.ISO_LOCAL_DATE)
-
-        // 初回同期時は「過去10年分」のデータを取得対象とし、2回目以降は前回同期日の翌日以降を取得
+ 
+        // 初回同期時は指定された「過去N年分」のデータを取得対象とし、2回目以降は前回同期日の翌日以降を取得
         val startDateStr = if (lastSync != null) {
             val lastDate = LocalDate.parse(lastSync.lastSyncedDate)
             if (lastDate.isBefore(today)) {
@@ -79,7 +80,7 @@ class WeatherRepositoryImpl(
                 return@withContext true // すでに最新データに更新されているためスキップ
             }
         } else {
-            today.minusYears(10).format(DateTimeFormatter.ISO_LOCAL_DATE)
+            today.minusYears(years.toLong()).format(DateTimeFormatter.ISO_LOCAL_DATE)
         }
 
         try {

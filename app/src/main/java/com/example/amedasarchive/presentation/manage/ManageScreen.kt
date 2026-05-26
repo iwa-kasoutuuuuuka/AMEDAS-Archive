@@ -115,6 +115,61 @@ fun ManageScreen(
             }
         }
 
+        // 同期データ対象年数選択エリア (10年/20年/30年)
+        val selectedYears by viewModel.selectedSyncYears.collectAsState()
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "⏳ 同期対象期間の指定",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "初回同期の際にさかのぼって蓄積する過去データ期間を選択します。元データが指定より短い場合は、存在する期間分を上限として全取得されます。",
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    lineHeight = 15.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(10, 20, 30).forEach { years ->
+                        val isSelected = selectedYears == years
+                        Button(
+                            onClick = { viewModel.selectSyncYears(years) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = if (isSelected) {
+                                ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            } else {
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        ) {
+                            Text(
+                                text = "過去 ${years} 年分",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // 同期進捗インジケーター（WorkManager実行時のみ美しく表示）
         if (isSyncing || syncProgress > 0f) {
             Card(

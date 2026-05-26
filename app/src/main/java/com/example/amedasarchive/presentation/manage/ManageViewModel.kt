@@ -36,8 +36,19 @@ class ManageViewModel(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
+    // ユーザー選択可能な同期対象年数 (デフォルト 10年)
+    private val _selectedSyncYears = MutableStateFlow(10)
+    val selectedSyncYears: StateFlow<Int> = _selectedSyncYears.asStateFlow()
+
     init {
         loadStorageInfo()
+    }
+
+    /**
+     * 同期対象年数を変更
+     */
+    fun selectSyncYears(years: Int) {
+        _selectedSyncYears.value = years
     }
 
     /**
@@ -77,6 +88,7 @@ class ManageViewModel(
             // 該当日付の地点IDリストを取得
             val stations = repository.getStationsByPrefecture(prefecture)
             val stationIds = stations.map { it.stationId }.toTypedArray()
+            val years = _selectedSyncYears.value
 
             if (stationIds.isEmpty()) {
                 _syncProgressText.value = "エラー: 地点マスタがありません"
@@ -87,7 +99,10 @@ class ManageViewModel(
             // WorkRequestの構成
             val syncWorkRequest = OneTimeWorkRequestBuilder<AmedasSyncWorker>()
                 .setInputData(
-                    workDataOf(AmedasSyncWorker.KEY_STATION_IDS to stationIds)
+                    workDataOf(
+                        AmedasSyncWorker.KEY_STATION_IDS to stationIds,
+                        AmedasSyncWorker.KEY_YEARS to years
+                    )
                 )
                 .setConstraints(
                     Constraints.Builder()

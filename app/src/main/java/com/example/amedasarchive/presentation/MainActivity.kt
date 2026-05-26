@@ -43,33 +43,33 @@ class MainActivity : ComponentActivity() {
             database.syncLogDao()
         )
 
-        // 初回起動時の全国アメダス完全マスタCSV (stations.csv) インポート処理 (DBシード)
+        // 初回起動時及び更新時の全国アメダス完全マスタCSV (stations.csv) インポート処理 (DBシード)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val current = repository.getAllStations()
-                if (current.isEmpty()) {
-                    val stationsList = mutableListOf<Station>()
-                    assets.open("stations.csv").bufferedReader().useLines { lines ->
-                        lines.forEach { line ->
-                            val tokens = line.split(",")
-                            if (tokens.size >= 8) {
-                                val station = Station(
-                                    stationId = tokens[0].trim(),
-                                    name = tokens[1].trim(),
-                                    kana = tokens[2].trim(),
-                                    prefecture = tokens[3].trim(),
-                                    latitude = tokens[4].trim().toDoubleOrNull() ?: 0.0,
-                                    longitude = tokens[5].trim().toDoubleOrNull() ?: 0.0,
-                                    elevation = tokens[6].trim().toDoubleOrNull() ?: 0.0,
-                                    stationType = tokens[7].trim()
-                                )
-                                stationsList.add(station)
-                            }
+                // 新しい観測所リストの差分や更新を即座に反映するため、マスタテーブルをクリアしてから再読込します
+                database.stationDao().clearAll()
+                
+                val stationsList = mutableListOf<Station>()
+                assets.open("stations.csv").bufferedReader().useLines { lines ->
+                    lines.forEach { line ->
+                        val tokens = line.split(",")
+                        if (tokens.size >= 8) {
+                            val station = Station(
+                                stationId = tokens[0].trim(),
+                                name = tokens[1].trim(),
+                                kana = tokens[2].trim(),
+                                prefecture = tokens[3].trim(),
+                                latitude = tokens[4].trim().toDoubleOrNull() ?: 0.0,
+                                longitude = tokens[5].trim().toDoubleOrNull() ?: 0.0,
+                                elevation = tokens[6].trim().toDoubleOrNull() ?: 0.0,
+                                stationType = tokens[7].trim()
+                            )
+                            stationsList.add(station)
                         }
                     }
-                    if (stationsList.isNotEmpty()) {
-                        repository.insertStations(stationsList)
-                    }
+                }
+                if (stationsList.isNotEmpty()) {
+                    repository.insertStations(stationsList)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
