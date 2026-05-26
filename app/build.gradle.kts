@@ -26,7 +26,7 @@ android {
     defaultConfig {
         applicationId = "com.example.amedasarchive"
         minSdk = 26 // LocalDateTimeやJavaTimeAPIをサポートするため26以上を推奨
-        targetSdk = 34
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0.0"
 
