@@ -71,12 +71,27 @@ class CompareViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             
-            // 比較用に直近1年間の日付範囲を設定
+            // 比較用に2地点の全記録期間をカバーする日付範囲を決定
             val rangeA = repository.getMinMaxDate(stationA.stationId)
             val rangeB = repository.getMinMaxDate(stationB.stationId)
 
-            val startDate = rangeA.first ?: "2023-01-01"
-            val endDate = rangeA.second ?: "2023-12-31"
+            val minA = rangeA.first
+            val minB = rangeB.first
+            val maxA = rangeA.second
+            val maxB = rangeB.second
+
+            val startDate = when {
+                minA != null && minB != null -> if (minA < minB) minA else minB
+                minA != null -> minA
+                minB != null -> minB
+                else -> "2023-01-01"
+            }
+            val endDate = when {
+                maxA != null && maxB != null -> if (maxA > maxB) maxA else maxB
+                maxA != null -> maxA
+                maxB != null -> maxB
+                else -> "2023-12-31"
+            }
 
             // 2地点のデータをそれぞれ抽出して結合
             repository.getCompareData(stationA.stationId, stationB.stationId, startDate, endDate)

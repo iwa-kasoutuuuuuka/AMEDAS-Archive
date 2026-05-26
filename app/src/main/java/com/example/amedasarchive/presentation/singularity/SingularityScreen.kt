@@ -262,7 +262,7 @@ fun SingularityScreen(
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // 免責バナー
         ComplianceBanner(modifier = Modifier.padding(top = 16.dp))
