@@ -26,6 +26,9 @@ import com.example.amedasarchive.presentation.singularity.SingularityScreen
 import com.example.amedasarchive.presentation.singularity.SingularityViewModel
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.example.amedasarchive.domain.model.Station
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +41,39 @@ class MainActivity : ComponentActivity() {
             database.stationDao(),
             database.syncLogDao()
         )
+
+        // 初回起動時の全国アメダス完全マスタCSV (stations.csv) インポート処理 (DBシード)
+        lifecycleScope.launch {
+            try {
+                val current = repository.getAllStations()
+                if (current.isEmpty()) {
+                    val stationsList = mutableListOf<Station>()
+                    assets.open("stations.csv").bufferedReader().useLines { lines ->
+                        lines.forEach { line ->
+                            val tokens = line.split(",")
+                            if (tokens.size >= 8) {
+                                val station = Station(
+                                    stationId = tokens[0].trim(),
+                                    name = tokens[1].trim(),
+                                    kana = tokens[2].trim(),
+                                    prefecture = tokens[3].trim(),
+                                    latitude = tokens[4].trim().toDoubleOrNull() ?: 0.0,
+                                    longitude = tokens[5].trim().toDoubleOrNull() ?: 0.0,
+                                    elevation = tokens[6].trim().toDoubleOrNull() ?: 0.0,
+                                    stationType = tokens[7].trim()
+                                )
+                                stationsList.add(station)
+                            }
+                        }
+                    }
+                    if (stationsList.isNotEmpty()) {
+                        repository.insertStations(stationsList)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
 
         // UseCase群の生成
         val calculateStatsUseCase = CalculateStatsUseCase(repository)
