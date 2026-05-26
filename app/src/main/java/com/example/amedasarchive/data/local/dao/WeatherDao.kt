@@ -2,6 +2,7 @@ package com.example.amedasarchive.data.local.dao
 
 import androidx.room.*
 import com.example.amedasarchive.data.local.entity.DailyWeatherEntity
+import com.example.amedasarchive.data.local.entity.StationEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -71,6 +72,40 @@ interface WeatherDao {
         GROUP BY s.prefecture
     """)
     suspend fun getRecordCountByPrefecture(): List<PrefectureRecordCount>
+
+    /**
+     * 【UX最適化】気象データ（daily_weather）が同期・蓄積されている都道府県のリストを重複なく取得
+     */
+    @Query("""
+        SELECT DISTINCT s.prefecture 
+        FROM daily_weather d
+        INNER JOIN stations s ON d.stationId = s.stationId
+        ORDER BY s.prefecture ASC
+    """)
+    suspend fun getActivePrefectures(): List<String>
+
+    /**
+     * 【UX最適化】気象データが同期・蓄積されているすべての観測所リストを取得
+     */
+    @Query("""
+        SELECT DISTINCT s.* 
+        FROM stations s
+        INNER JOIN daily_weather d ON s.stationId = d.stationId
+        ORDER BY s.prefecture ASC, s.name ASC
+    """)
+    suspend fun getActiveStations(): List<StationEntity>
+
+    /**
+     * 【UX最適化】特定の都道府県の中で、気象データが同期・蓄積されている観測所リストを取得
+     */
+    @Query("""
+        SELECT DISTINCT s.* 
+        FROM stations s
+        INNER JOIN daily_weather d ON s.stationId = d.stationId
+        WHERE s.prefecture = :prefecture
+        ORDER BY s.name ASC
+    """)
+    suspend fun getActiveStationsByPrefecture(prefecture: String): List<StationEntity>
 }
 
 /**

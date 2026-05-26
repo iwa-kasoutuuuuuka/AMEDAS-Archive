@@ -261,11 +261,15 @@ class HomeViewModel(
                 repository.insertStations(defaultStations)
             }
             
-            val prefs = repository.getPrefectures()
+            val prefs = repository.getActivePrefectures()
             val sortedPrefs = prefs.sortedBy { PREFECTURE_ORDER.indexOf(it).let { index -> if (index == -1) 999 else index } }
             _prefectures.value = sortedPrefs
             if (sortedPrefs.isNotEmpty()) {
                 selectPrefecture(sortedPrefs.first())
+            } else {
+                _prefectures.value = emptyList()
+                _stations.value = emptyList()
+                _selectedStation.value = null
             }
             _isLoading.value = false
         }
@@ -274,7 +278,7 @@ class HomeViewModel(
     fun selectPrefecture(pref: String) {
         _selectedPrefecture.value = pref
         viewModelScope.launch {
-            val list = repository.getStationsByPrefecture(pref)
+            val list = repository.getActiveStationsByPrefecture(pref)
             _stations.value = list
             if (list.isNotEmpty()) {
                 selectStation(list.first())

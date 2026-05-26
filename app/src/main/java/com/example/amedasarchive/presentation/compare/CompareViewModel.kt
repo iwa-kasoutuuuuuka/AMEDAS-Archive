@@ -36,7 +36,7 @@ class CompareViewModel(
 
     fun loadStations() {
         viewModelScope.launch {
-            val list = repository.getAllStations()
+            val list = repository.getActiveStations()
             _stations.value = list
             if (list.size >= 2) {
                 if (_selectedStationA.value == null) {
@@ -46,6 +46,11 @@ class CompareViewModel(
                     _selectedStationB.value = list[1]
                 }
                 compareData()
+            } else {
+                _selectedStationA.value = null
+                _selectedStationB.value = null
+                _dataListA.value = emptyList()
+                _dataListB.value = emptyList()
             }
         }
     }

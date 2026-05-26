@@ -17,6 +17,11 @@ interface WeatherRepository {
     suspend fun getPrefectures(): List<String>
     suspend fun insertStations(stations: List<Station>)
 
+    // --- 同期済み（アクティブ）データ関連 ---
+    suspend fun getActivePrefectures(): List<String>
+    suspend fun getActiveStations(): List<Station>
+    suspend fun getActiveStationsByPrefecture(prefecture: String): List<Station>
+
     // --- 気象データ同期関連 ---
     /**
      * 該当観測所のデータを同期。ローカルDBの最新日付を自動確認し、

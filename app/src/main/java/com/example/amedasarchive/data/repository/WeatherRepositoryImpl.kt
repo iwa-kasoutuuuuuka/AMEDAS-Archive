@@ -49,6 +49,18 @@ class WeatherRepositoryImpl(
         stationDao.insertAll(stations.map { it.toEntity() })
     }
 
+    override suspend fun getActivePrefectures(): List<String> = withContext(Dispatchers.IO) {
+        weatherDao.getActivePrefectures()
+    }
+
+    override suspend fun getActiveStations(): List<Station> = withContext(Dispatchers.IO) {
+        weatherDao.getActiveStations().map { it.toDomain() }
+    }
+
+    override suspend fun getActiveStationsByPrefecture(prefecture: String): List<Station> = withContext(Dispatchers.IO) {
+        weatherDao.getActiveStationsByPrefecture(prefecture).map { it.toDomain() }
+    }
+
     /**
      * ローカルDBの最終同期日付を確認し、気象庁から不足している差分データのみを
      * ストリーム経由でダウンロードし、パースしてRoomに保存します。

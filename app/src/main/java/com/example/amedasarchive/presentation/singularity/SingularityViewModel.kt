@@ -40,13 +40,16 @@ class SingularityViewModel(
 
     fun loadInitialData() {
         viewModelScope.launch {
-            val list = repository.getAllStations()
+            val list = repository.getActiveStations()
             _stations.value = list
             if (list.isNotEmpty()) {
                 if (_selectedStation.value == null) {
                     _selectedStation.value = list.first()
                 }
                 analyzeSingularities()
+            } else {
+                _selectedStation.value = null
+                _singularityList.value = emptyList()
             }
         }
     }
