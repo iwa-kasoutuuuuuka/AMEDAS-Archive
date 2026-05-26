@@ -67,7 +67,7 @@ class HomeViewModel(
         viewModelScope.launch {
             _isLoading.value = true
 
-            val prefs = repository.getActivePrefectures()
+            val prefs = repository.getPrefectures()
             val sortedPrefs = prefs.sortedBy { pref ->
                 PREFECTURE_ORDER.indexOf(pref).let { index -> if (index == -1) 999 else index }
             }
@@ -86,7 +86,7 @@ class HomeViewModel(
     fun selectPrefecture(pref: String) {
         _selectedPrefecture.value = pref
         viewModelScope.launch {
-            val list = repository.getActiveStationsByPrefecture(pref)
+            val list = repository.getStationsByPrefecture(pref)
             _stations.value = list
             if (list.isNotEmpty()) {
                 selectStation(list.first())

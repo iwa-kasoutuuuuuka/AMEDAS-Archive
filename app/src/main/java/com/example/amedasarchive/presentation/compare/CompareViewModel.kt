@@ -36,7 +36,7 @@ class CompareViewModel(
 
     fun loadStations() {
         viewModelScope.launch {
-            val list = repository.getActiveStations()
+            val list = repository.getAllStations()
             _stations.value = list
             if (list.size >= 2) {
                 if (_selectedStationA.value == null) {

@@ -40,7 +40,7 @@ class SingularityViewModel(
 
     fun loadInitialData() {
         viewModelScope.launch {
-            val list = repository.getActiveStations()
+            val list = repository.getAllStations()
             _stations.value = list
             if (list.isNotEmpty()) {
                 if (_selectedStation.value == null) {
