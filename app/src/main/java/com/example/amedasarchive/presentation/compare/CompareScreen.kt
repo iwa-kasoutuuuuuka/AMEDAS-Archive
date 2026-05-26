@@ -23,20 +23,26 @@ fun CompareScreen(
     viewModel: CompareViewModel,
     modifier: Modifier = Modifier
 ) {
-    val stations by viewModel.stations.collectAsState()
+    val activePrefectures by viewModel.activePrefectures.collectAsState()
+    val selectedPrefA by viewModel.selectedPrefectureA.collectAsState()
+    val selectedPrefB by viewModel.selectedPrefectureB.collectAsState()
+    val stationsA by viewModel.stationsA.collectAsState()
+    val stationsB by viewModel.stationsB.collectAsState()
     val stationA by viewModel.selectedStationA.collectAsState()
     val stationB by viewModel.selectedStationB.collectAsState()
     val dataA by viewModel.dataListA.collectAsState()
     val dataB by viewModel.dataListB.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    var expandedA by remember { mutableStateOf(false) }
-    var expandedB by remember { mutableStateOf(false) }
+    var prefExpandedA by remember { mutableStateOf(false) }
+    var stationExpandedA by remember { mutableStateOf(false) }
+    var prefExpandedB by remember { mutableStateOf(false) }
+    var stationExpandedB by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
-        viewModel.loadStations()
+        viewModel.loadActiveData()
     }
 
     Column(
@@ -88,67 +94,153 @@ fun CompareScreen(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
+                // 地点A (青) 選択セクション
+                Text(
+                    text = "🔵 比較地点 A (青色プロット)",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF3F51B5)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    // 地点A
+                    // 都道府県A
                     ExposedDropdownMenuBox(
-                        expanded = expandedA,
-                        onExpandedChange = { expandedA = !expandedA },
+                        expanded = prefExpandedA,
+                        onExpandedChange = { prefExpandedA = !prefExpandedA },
                         modifier = Modifier.weight(1f)
                     ) {
                         TextField(
-                            value = stationA?.name ?: "選択肢なし",
+                            value = selectedPrefA.ifEmpty { "選択肢なし" },
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("地点 A (青)") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedA) },
+                            label = { Text("都道府県 A") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = prefExpandedA) },
                             modifier = Modifier.menuAnchor(),
                             colors = ExposedDropdownMenuDefaults.textFieldColors()
                         )
                         ExposedDropdownMenu(
-                            expanded = expandedA,
-                            onDismissRequest = { expandedA = false }
+                            expanded = prefExpandedA,
+                            onDismissRequest = { prefExpandedA = false }
                         ) {
-                            stations.forEach { s ->
+                            activePrefectures.forEach { pref ->
                                 DropdownMenuItem(
-                                    text = { Text(s.name) },
+                                    text = { Text(pref) },
                                     onClick = {
-                                        viewModel.selectStationA(s)
-                                        expandedA = false
+                                        viewModel.selectPrefectureA(pref)
+                                        prefExpandedA = false
                                     }
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                    // 地点B
+                    // 観測所A
                     ExposedDropdownMenuBox(
-                        expanded = expandedB,
-                        onExpandedChange = { expandedB = !expandedB },
+                        expanded = stationExpandedA,
+                        onExpandedChange = { stationExpandedA = !stationExpandedA },
+                        modifier = Modifier.weight(1.3f)
+                    ) {
+                        TextField(
+                            value = stationA?.name ?: "選択肢なし",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("観測所 A") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stationExpandedA) },
+                            modifier = Modifier.menuAnchor(),
+                            colors = ExposedDropdownMenuDefaults.textFieldColors()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = stationExpandedA,
+                            onDismissRequest = { stationExpandedA = false }
+                        ) {
+                            stationsA.forEach { s ->
+                                DropdownMenuItem(
+                                    text = { Text(s.name) },
+                                    onClick = {
+                                        viewModel.selectStationA(s)
+                                        stationExpandedA = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 地点B (赤) 選択セクション
+                Text(
+                    text = "🔴 比較地点 B (赤色プロット)",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF5722)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    // 都道府県B
+                    ExposedDropdownMenuBox(
+                        expanded = prefExpandedB,
+                        onExpandedChange = { prefExpandedB = !prefExpandedB },
                         modifier = Modifier.weight(1f)
+                    ) {
+                        TextField(
+                            value = selectedPrefB.ifEmpty { "選択肢なし" },
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("都道府県 B") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = prefExpandedB) },
+                            modifier = Modifier.menuAnchor(),
+                            colors = ExposedDropdownMenuDefaults.textFieldColors()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = prefExpandedB,
+                            onDismissRequest = { prefExpandedB = false }
+                        ) {
+                            activePrefectures.forEach { pref ->
+                                DropdownMenuItem(
+                                    text = { Text(pref) },
+                                    onClick = {
+                                        viewModel.selectPrefectureB(pref)
+                                        prefExpandedB = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // 観測所B
+                    ExposedDropdownMenuBox(
+                        expanded = stationExpandedB,
+                        onExpandedChange = { stationExpandedB = !stationExpandedB },
+                        modifier = Modifier.weight(1.3f)
                     ) {
                         TextField(
                             value = stationB?.name ?: "選択肢なし",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("地点 B (赤)") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedB) },
+                            label = { Text("観測所 B") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stationExpandedB) },
                             modifier = Modifier.menuAnchor(),
                             colors = ExposedDropdownMenuDefaults.textFieldColors()
                         )
                         ExposedDropdownMenu(
-                            expanded = expandedB,
-                            onDismissRequest = { expandedB = false }
+                            expanded = stationExpandedB,
+                            onDismissRequest = { stationExpandedB = false }
                         ) {
-                            stations.forEach { s ->
+                            stationsB.forEach { s ->
                                 DropdownMenuItem(
                                     text = { Text(s.name) },
                                     onClick = {
                                         viewModel.selectStationB(s)
-                                        expandedB = false
+                                        stationExpandedB = false
                                     }
                                 )
                             }

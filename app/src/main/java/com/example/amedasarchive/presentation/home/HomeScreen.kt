@@ -41,6 +41,10 @@ fun HomeScreen(
 
     val scrollState = rememberScrollState()
 
+    LaunchedEffect(Unit) {
+        viewModel.refreshData()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()

@@ -64,20 +64,35 @@ class HomeViewModel(
      * 同期済みデータが存在する都道府県のみをアクティブフィルタで取得・表示する。
      */
     private fun loadInitialData() {
+        refreshData()
+    }
+
+    /**
+     * 画面起動時などに呼び出し、最新の同期済みデータリストを再読込・更新する。
+     */
+    fun refreshData() {
         viewModelScope.launch {
             _isLoading.value = true
 
-            val prefs = repository.getPrefectures()
+            // 同期済み（daily_weatherにデータがある）都道府県のみを取得
+            val prefs = repository.getActivePrefectures()
             val sortedPrefs = prefs.sortedBy { pref ->
                 PREFECTURE_ORDER.indexOf(pref).let { index -> if (index == -1) 999 else index }
             }
             _prefectures.value = sortedPrefs
+            
+            val currentPref = _selectedPrefecture.value
             if (sortedPrefs.isNotEmpty()) {
-                selectPrefecture(sortedPrefs.first())
+                if (currentPref.isNotEmpty() && currentPref in sortedPrefs) {
+                    selectPrefecture(currentPref)
+                } else {
+                    selectPrefecture(sortedPrefs.first())
+                }
             } else {
                 _prefectures.value = emptyList()
                 _stations.value = emptyList()
                 _selectedStation.value = null
+                _dateRangeText.value = "最古: -- ~ 最新: --"
             }
             _isLoading.value = false
         }
@@ -86,12 +101,16 @@ class HomeViewModel(
     fun selectPrefecture(pref: String) {
         _selectedPrefecture.value = pref
         viewModelScope.launch {
-            val list = repository.getStationsByPrefecture(pref)
+            // 同期済み（daily_weatherにデータがある）観測所のみを取得
+            val list = repository.getActiveStationsByPrefecture(pref)
             _stations.value = list
             if (list.isNotEmpty()) {
-                selectStation(list.first())
+                val currentStation = _selectedStation.value
+                val matched = list.firstOrNull { it.stationId == currentStation?.stationId }
+                selectStation(matched ?: list.first())
             } else {
                 _selectedStation.value = null
+                _dateRangeText.value = "最古: -- ~ 最新: --"
             }
         }
     }

@@ -12,15 +12,31 @@ class CompareViewModel(
     private val repository: WeatherRepository
 ) : ViewModel() {
 
-    private val _stations = MutableStateFlow<List<Station>>(emptyList())
-    val stations: StateFlow<List<Station>> = _stations.asStateFlow()
+    // 同期済みの都道府県リスト
+    private val _activePrefectures = MutableStateFlow<List<String>>(emptyList())
+    val activePrefectures: StateFlow<List<String>> = _activePrefectures.asStateFlow()
+
+    // 地点Aの選択状態
+    private val _selectedPrefectureA = MutableStateFlow("")
+    val selectedPrefectureA: StateFlow<String> = _selectedPrefectureA.asStateFlow()
+
+    private val _stationsA = MutableStateFlow<List<Station>>(emptyList())
+    val stationsA: StateFlow<List<Station>> = _stationsA.asStateFlow()
 
     private val _selectedStationA = MutableStateFlow<Station?>(null)
     val selectedStationA: StateFlow<Station?> = _selectedStationA.asStateFlow()
 
+    // 地点Bの選択状態
+    private val _selectedPrefectureB = MutableStateFlow("")
+    val selectedPrefectureB: StateFlow<String> = _selectedPrefectureB.asStateFlow()
+
+    private val _stationsB = MutableStateFlow<List<Station>>(emptyList())
+    val stationsB: StateFlow<List<Station>> = _stationsB.asStateFlow()
+
     private val _selectedStationB = MutableStateFlow<Station?>(null)
     val selectedStationB: StateFlow<Station?> = _selectedStationB.asStateFlow()
 
+    // 比較データリスト
     private val _dataListA = MutableStateFlow<List<WeatherStats>>(emptyList())
     val dataListA: StateFlow<List<WeatherStats>> = _dataListA.asStateFlow()
 
@@ -31,26 +47,82 @@ class CompareViewModel(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
-        loadStations()
+        loadActiveData()
     }
 
-    fun loadStations() {
+    companion object {
+        private val PREFECTURE_ORDER = listOf(
+            "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
+            "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
+            "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県",
+            "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県",
+            "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県",
+            "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県",
+            "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"
+        )
+    }
+
+    /**
+     * データが蓄積されている都道府県および初期観測所を読み込む
+     */
+    fun loadActiveData() {
         viewModelScope.launch {
-            val list = repository.getAllStations()
-            _stations.value = list
-            if (list.size >= 2) {
-                if (_selectedStationA.value == null) {
-                    _selectedStationA.value = list[0]
+            _isLoading.value = true
+            val prefs = repository.getActivePrefectures()
+            val sortedPrefs = prefs.sortedBy { pref ->
+                PREFECTURE_ORDER.indexOf(pref).let { index -> if (index == -1) 999 else index }
+            }
+            _activePrefectures.value = sortedPrefs
+
+            if (sortedPrefs.isNotEmpty()) {
+                val initPrefA = _selectedPrefectureA.value.ifEmpty { sortedPrefs.first() }
+                val initPrefB = _selectedPrefectureB.value.ifEmpty { 
+                    if (sortedPrefs.size >= 2) sortedPrefs[1] else sortedPrefs.first()
                 }
-                if (_selectedStationB.value == null) {
-                    _selectedStationB.value = list[1]
-                }
-                compareData()
+                selectPrefectureA(initPrefA)
+                selectPrefectureB(initPrefB)
             } else {
+                _selectedPrefectureA.value = ""
+                _selectedPrefectureB.value = ""
+                _stationsA.value = emptyList()
+                _stationsB.value = emptyList()
                 _selectedStationA.value = null
                 _selectedStationB.value = null
                 _dataListA.value = emptyList()
                 _dataListB.value = emptyList()
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun selectPrefectureA(pref: String) {
+        _selectedPrefectureA.value = pref
+        viewModelScope.launch {
+            val list = repository.getActiveStationsByPrefecture(pref)
+            _stationsA.value = list
+            if (list.isNotEmpty()) {
+                val current = _selectedStationA.value
+                val matched = list.firstOrNull { it.stationId == current?.stationId }
+                selectStationA(matched ?: list.first())
+            } else {
+                _selectedStationA.value = null
+                compareData()
+            }
+        }
+    }
+
+    fun selectPrefectureB(pref: String) {
+        _selectedPrefectureB.value = pref
+        viewModelScope.launch {
+            val list = repository.getActiveStationsByPrefecture(pref)
+            _stationsB.value = list
+            if (list.isNotEmpty()) {
+                val current = _selectedStationB.value
+                val matched = list.firstOrNull { it.stationId == current?.stationId }
+                selectStationB(matched ?: list.first())
+            } else {
+                _selectedStationB.value = null
+                compareData()
             }
         }
     }
@@ -66,17 +138,20 @@ class CompareViewModel(
     }
 
     /**
-     * 2地点の過去1ヶ月間などのデータを重ね合わせ比較するために
-     * データベースからフロー経由でリアルタイム取得
+     * 2地点のデータを重ね合わせ比較するためにデータベースからフロー経由でリアルタイム取得
      */
     fun compareData() {
-        val stationA = _selectedStationA.value ?: return
-        val stationB = _selectedStationB.value ?: return
+        val stationA = _selectedStationA.value
+        val stationB = _selectedStationB.value
+        if (stationA == null || stationB == null) {
+            _dataListA.value = emptyList()
+            _dataListB.value = emptyList()
+            return
+        }
         
         viewModelScope.launch {
             _isLoading.value = true
             
-            // 比較用に2地点の全記録期間をカバーする日付範囲を決定
             val rangeA = repository.getMinMaxDate(stationA.stationId)
             val rangeB = repository.getMinMaxDate(stationB.stationId)
 
@@ -98,10 +173,8 @@ class CompareViewModel(
                 else -> "2023-12-31"
             }
 
-            // 2地点のデータをそれぞれ抽出して結合
             repository.getCompareData(stationA.stationId, stationB.stationId, startDate, endDate)
                 .collect { list ->
-                    // 地点Aと地点Bにデータを仕分け
                     _dataListA.value = list.filter { it.stationId == stationA.stationId }
                     _dataListB.value = list.filter { it.stationId == stationB.stationId }
                     _isLoading.value = false
